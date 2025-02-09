@@ -14,7 +14,15 @@
     "express": "^4.17.1",
     "puppeteer": "^22.8.2"
   },
-   "engines": {
+  "engines": {
     "node": "18.x"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arifinblog/kuramanime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/arifinblog/kuramanime/issues"
+  },
+  "homepage": "https://github.com/arifinblog/kuramanime#readme"
 }
