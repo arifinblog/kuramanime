@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pemutar Video Embedded</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+        .error-message {
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <video id="player" autoplay controls playsinline webkit-playsinline controlsList="nodownload" oncontextmenu="return false;"></video>
+    <p id="error-display" class="error-message" style="display:none;"></p>
+    <script>
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        var getVidUrl = getParameterByName('getVidUrl');
+        var videoPlayer = document.getElementById('player');
+        var errorDisplay = document.getElementById('error-display');
+
+        function displayError(message) {
+            videoPlayer.style.display = 'none';
+            errorDisplay.textContent = message;
+            errorDisplay.style.display = 'block';
+        }
+
+        if (getVidUrl) {
+            // Ambil URL video DARI SERVER, bukan replace placeholder
+            fetch('/?getVidUrl=' + encodeURIComponent(getVidUrl)) // Perhatikan: URL relatif!
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    // Terapkan SELURUH HTML yang di-render server
+                    document.documentElement.innerHTML = html;
+
+                    // Periksa apakah videoPlayer ada setelah menerapkan HTML baru
+                    var newVideoPlayer = document.getElementById('player');
+                    if (!newVideoPlayer || !newVideoPlayer.src) {
+                         displayError("Video tidak ditemukan atau URL video kosong.");
+                    }
+
+                })
+                .catch(error => {
+                    console.error('Ada masalah dengan permintaan fetch:', error);
+                    displayError("Terjadi kesalahan saat memuat video.");
+                });
+        } else {
+            displayError("Masukkan URL halaman web dengan parameter getVidUrl.");
+        }
+    </script>
+</body>
+</html>

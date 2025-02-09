@@ -1,0 +1,16 @@
+{
+    "name": "getvideourl-app",
+    "version": "1.0.0",
+    "description": "Aplikasi untuk mendapatkan URL video dari halaman web.",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "puppeteer": "^24.2.0",
+      "validator": "^13.12.0"
+    }
+  }
