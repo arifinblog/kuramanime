@@ -1,8 +1,7 @@
-
 [build]
-  command = "npm install"  # Perintah untuk menginstal dependensi
-  functions = "functions"  # Menentukan folder "functions"
+  command = "npm install"
+  functions = "functions"
 
 [functions]
-  node_bundler = "esbuild" # Gunakan esbuild. Lebih cepat dari bundler bawaan
-  external_node_modules = ["puppeteer"] # WAJIB: Beri tahu Netlify untuk menyertakan Puppeteer.
+  node_bundler = "esbuild"
+  external_node_modules = ["puppeteer"]
