@@ -1,7 +1,8 @@
 [build]
   command = "npm install"
-  functions = "functions"
-
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["puppeteer"]
+  functions = "netlify/functions"
+  publish = "."
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
