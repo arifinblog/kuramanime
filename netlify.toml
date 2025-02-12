@@ -1,8 +1,0 @@
-[build]
-  command = "npm install"  # Netlify akan menjalankan ini
-  publish = "."          # Direktori yang akan di-deploy
-
-[[redirects]]
-  from = "/*"
-  to = "/"
-  status = 200

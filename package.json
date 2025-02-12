@@ -1,28 +1,20 @@
 {
-  "name": "kuramanime",
-  "version": "1.0.0",
-  "description": "Deskripsi aplikasi Anda",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node scraper.js",
+    "dev": "node scraper.js"
   },
+  "name": "getdl",
+  "version": "1.0.0",
+  "main": "scraper.js",
   "keywords": [],
-  "author": "Nama Anda",
+  "author": "",
   "license": "ISC",
+  "description": "",
   "dependencies": {
-    "express": "^4.17.1",
-    "puppeteer": "^22.8.2"
+    "express": "^4.21.2",
+    "puppeteer": "^24.2.0"
   },
   "engines": {
-    "node": "18.x"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/arifinblog/kuramanime.git"
-  },
-  "bugs": {
-    "url": "https://github.com/arifinblog/kuramanime/issues"
-  },
-  "homepage": "https://github.com/arifinblog/kuramanime#readme"
+    "node": ">=18.x"
+  }
 }
