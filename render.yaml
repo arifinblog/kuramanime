@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: anime-video-scraper
+    name: web-scraper
     env: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node scraper.js
     envVars:
-      - key: NODE_ENV
-        value: production 
+      - key: NODE_VERSION
+        value: 18.x 
