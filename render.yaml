@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: web-scraper
-    env: node
-    buildCommand: npm install
-    startCommand: node scraper.js
-    envVars:
-      - key: NODE_VERSION
-        value: 18.x 

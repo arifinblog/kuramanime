@@ -1,20 +1,16 @@
 {
-  "scripts": {
-    "start": "node scraper.js",
-    "dev": "node scraper.js"
-  },
-  "name": "getdl",
+  "name": "kuramp",
   "version": "1.0.0",
-  "main": "scraper.js",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "express": "^4.21.2",
     "puppeteer": "^24.2.0"
-  },
-  "engines": {
-    "node": ">=18.x"
   }
 }
