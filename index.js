@@ -2,62 +2,60 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 
 const app = express();
-// Gunakan environment variable PORT atau default ke 3000
-const port = process.env.PORT || 3000;
+const port = 8888;
 
 app.get('/', async (req, res) => {
-  const videoPageUrl = req.query.getVidUrl;
+    try {
+        const videoUrl = req.query.getVidUrl;
+        if (!videoUrl) {
+            return res.status(400).send('Parameter getVidUrl dibutuhkan.');
+        }
 
-  if (!videoPageUrl) {
-    return res.status(400).send('Parameter getVidUrl tidak ada.');
-  }
+        const browser = await puppeteer.launch({
+            headless: "new", // Gunakan mode headless baru. Lebih cepat dan direkomendasikan.
+            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Sering dibutuhkan di lingkungan server (misalnya, Docker, VPS).
+        });
+        const page = await browser.newPage();
 
-  try {
-    const browser = await puppeteer.launch({
-      headless: 'new', // Gunakan 'new' untuk mode headless yang lebih baru
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'], // Tambahkan --disable-dev-shm-usage
-    });
-    const page = await browser.newPage();
+        // Pergi ke URL video.  'networkidle0' menunggu hingga semua resource (termasuk video) selesai dimuat.
+        // Jika terlalu lama, coba ganti dengan 'domcontentloaded' atau 'load'.
+        await page.goto(videoUrl, { waitUntil: 'networkidle0' });
 
-    await page.goto(videoPageUrl, { waitUntil: 'networkidle0' });
+        // Tunggu hingga elemen video muncul di DOM.  Ini memastikan bahwa elemen tersebut ada sebelum kita coba interaksi.
+        await page.waitForSelector('video#player');
 
-    // Tunggu div dengan class plyr__video-wrapper
-    await page.waitForSelector('div.plyr__video-wrapper');
+        // Ekstrak URL video.  page.evaluate() menjalankan kode JavaScript *di dalam konteks browser*.
+        let extractedUrl = await page.evaluate(() => {
+            const videoElement = document.querySelector('video#player');
 
-    // Ambil URL sumber video dari elemen video di dalam div tersebut.
-    const videoSrc = await page.evaluate(() => {
-      const videoElement = document.querySelector('div.plyr__video-wrapper > video#player');
-      return videoElement ? videoElement.src : null;
-    });
+            // Cek apakah elemen video ada DAN memiliki atribut 'src'.
+            if (videoElement && videoElement.src) {
+                return videoElement.src;
+            }
 
-    await browser.close();
+            // Jika tidak ada di 'src', coba cari di dalam tag <source>.
+            const sourceElement = document.querySelector('video#player source');
+            if (sourceElement && sourceElement.src) {
+                return sourceElement.src;
+            }
 
-    if (videoSrc) {
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Video Player</title>
-        </head>
-        <body>
-          <video width="100%" height="100%" controls>
-            <source src="${videoSrc}" type="video/mp4">
-            Browser Anda tidak mendukung tag video.
-          </video>
-        </body>
-        </html>
-      `;
-      res.status(200).send(html);
-    } else {
-      res.status(404).send('Video tidak ditemukan.');
+            return null; // Kembalikan null jika URL tidak ditemukan.
+        });
+
+        await browser.close();
+
+        if (!extractedUrl) {
+            return res.status(404).send('URL video tidak ditemukan.');
+        }
+
+        res.send(extractedUrl);
+
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).send('Terjadi kesalahan: ' + error.message);
     }
-
-  } catch (error) {
-    console.error('Terjadi kesalahan:', error);
-    res.status(500).send('Terjadi kesalahan saat memproses permintaan.');
-  }
 });
 
 app.listen(port, () => {
-  console.log(`Server berjalan di http://localhost:${port}`);
+    console.log(`Server berjalan di http://localhost:${port}`);
 });
