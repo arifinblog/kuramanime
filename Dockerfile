@@ -1,6 +1,6 @@
-FROM node:20
+FROM node:23.8.0
 
-# Instal dependensi sistem
+# Jalankan update sebelum install
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk-4-1 \
     libgraphene-1.0-0 \
@@ -12,23 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmanette-0.2-0 \
     libgles2-mesa
 
-# Atur direktori kerja
 WORKDIR /app
-
-# Salin file package.json dan package-lock.json
 COPY package*.json ./
-
-# Instal dependensi Node.js
 RUN npm install
 
-# Salin kode aplikasi
 COPY . .
 
-# Atur variabel lingkungan Playwright (penting untuk Docker)
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright install --with-deps  # Pastikan --with-deps ada!
 
-# Unduh browser Playwright DAN dependensi sistemnya
-RUN npx playwright install --with-deps
-
-# Perintah untuk menjalankan aplikasi
 CMD ["node", "index.js"]
