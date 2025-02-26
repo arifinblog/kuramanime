@@ -25,34 +25,39 @@ app.get('/', async (req, res) => {
 
     console.log("URL yang digunakan:", videoPageUrl);
 
-    await page.goto(videoPageUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto(videoPageUrl, { waitUntil: 'networkidle', timeout: 60000 }); // Waktu tunggu lebih lama
+    await page.waitForTimeout(5000); // Penundaan tambahan
 
-    // Mencoba mendapatkan URL video dengan berbagai cara
-    let videoSrc = await page.evaluate(() => {
+    // Mencoba mendapatkan URL video dengan berbagai cara dan mengumpulkan info debug
+    const debugInfo = await page.evaluate(() => {
       const videoElement = document.querySelector('div.plyr__video-wrapper > video#player');
+      let src = null;
+      let dataSrc = null;
+      let sourceSrc = null;
 
-      if (!videoElement) {
-        return null; // Video element tidak ditemukan
+      if (videoElement) {
+        console.log("Elemen video ditemukan:", videoElement);
+        src = videoElement.src || null;
+        dataSrc = videoElement.dataset.src || null;
+
+        const sourceElement = videoElement.querySelector('source');
+        if (sourceElement) {
+          sourceSrc = sourceElement.src || null;
+          console.log("Elemen source ditemukan:", sourceElement);
+          console.log("Atribut src elemen source:", sourceElement.src);
+        }
       }
 
-      // 1. Cek atribut src langsung
-      if (videoElement.src) {
-        return videoElement.src;
-      }
-
-      // 2. Cek atribut data-src
-      if (videoElement.dataset.src) {
-        return videoElement.dataset.src;
-      }
-
-      // 3. Cek elemen <source> di dalam elemen <video>
-      const sourceElement = videoElement.querySelector('source');
-      if (sourceElement && sourceElement.src) {
-        return sourceElement.src;
-      }
-
-      return null; // Tidak ada sumber video yang ditemukan
+      return {
+        src: src,
+        dataSrc: dataSrc,
+        sourceSrc: sourceSrc,
+        videoElementFound: !!videoElement // true jika videoElement ditemukan
+      };
     });
+
+    console.log("Informasi Debug:", debugInfo); // Cetak informasi debug di server
+    videoSrc = debugInfo.src || debugInfo.dataSrc || debugInfo.sourceSrc || null; // gunakan informasi debug
 
 
     await browser.close();
@@ -77,7 +82,6 @@ app.get('/', async (req, res) => {
               width: auto;
               height: auto;
               z-index: -1;
-              object-fit: cover; /* Menambahkan object-fit */
             }
           </style>
         </head>
