@@ -1,11 +1,11 @@
-FROM node:23.8.0
+FROM node:23
 
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk-4-1 \
     libgraphene-1.0-0 \
-    libgstreamer1.0-gl \
+    gstreamer1.0-plugins-bad \
     libgstreamer-plugins-base1.0-0 \
     libavif15 \
     libenchant-2-2 \
