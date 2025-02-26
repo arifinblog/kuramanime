@@ -28,18 +28,21 @@ app.get('/', async (req, res) => {
     await page.goto(videoPageUrl, { waitUntil: 'networkidle', timeout: 60000 }); // Waktu tunggu lebih lama
     await page.waitForTimeout(5000); // Penundaan tambahan
 
+    // Perbaiki selector di sini!
+    const videoSelector = 'div.plyr__video-wrapper > video#player'; // Ganti dengan selector yang benar
+
     // Mencoba mendapatkan URL video dengan berbagai cara dan mengumpulkan info debug
-    const debugInfo = await page.evaluate(() => {
-      const videoElement = document.querySelector('div.plyr__video-wrapper > video#player');
+    const debugInfo = await page.evaluate((videoSelector) => {
+      const videoElement = document.querySelector(videoSelector);
       let src = null;
       let dataSrc = null;
       let sourceSrc = null;
 
       if (videoElement) {
         console.log("Elemen video ditemukan:", videoElement);
-        src = videoElement.src || null;
-        dataSrc = videoElement.dataset.src || null;
+        src = videoElement.src || null;  // Ambil atribut src
 
+        // Prioritaskan elemen <source> jika ada
         const sourceElement = videoElement.querySelector('source');
         if (sourceElement) {
           sourceSrc = sourceElement.src || null;
@@ -54,11 +57,10 @@ app.get('/', async (req, res) => {
         sourceSrc: sourceSrc,
         videoElementFound: !!videoElement // true jika videoElement ditemukan
       };
-    });
+    }, videoSelector); // Kirim videoSelector ke page.evaluate
 
     console.log("Informasi Debug:", debugInfo); // Cetak informasi debug di server
-    videoSrc = debugInfo.src || debugInfo.dataSrc || debugInfo.sourceSrc || null; // gunakan informasi debug
-
+    videoSrc = debugInfo.src || debugInfo.sourceSrc || null; // Prioritaskan src langsung, lalu source
 
     await browser.close();
 
@@ -86,7 +88,7 @@ app.get('/', async (req, res) => {
           </style>
         </head>
         <body>
-          <video width="100%" height="100%" controls>
+          <video width="100%" height="100%" controls crossorigin="anonymous">
             <source src="${videoSrc}" type="video/mp4">
             Browser Anda tidak mendukung tag video.
           </video>
