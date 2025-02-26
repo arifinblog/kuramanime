@@ -1,6 +1,7 @@
-FROM node:23.8.0
+FROM node:23
 
-# Jalankan update sebelum install
+USER root # Pastikan kita adalah root
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk-4-1 \
     libgraphene-1.0-0 \
@@ -19,6 +20,6 @@ RUN npm install
 COPY . .
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN npx playwright install --with-deps  # Pastikan --with-deps ada!
+RUN npx playwright install --with-deps
 
 CMD ["node", "index.js"]
