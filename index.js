@@ -21,9 +21,30 @@ app.get('/', async (req, res) => {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
-    const page = await browser.newPage();
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+    });
+    const page = await context.newPage();
+
+    await page.route('**/*', route => {
+      if (route.request().resourceType() === 'image' || route.request().resourceType() === 'stylesheet' || route.request().resourceType() === 'font')
+        route.abort();
+      else
+        route.continue();
+    });
 
     console.log("URL yang digunakan:", videoPageUrl);
+
+    let networkVideoUrl = null; // Simpan URL video dari respons jaringan
+
+    // Tangkap respons jaringan
+    page.on('response', response => {
+      const url = response.url();
+      if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.m3u8') || url.endsWith('.ts')) {
+        console.log('>> Ditemukan URL video di jaringan:', url);
+        networkVideoUrl = url; // Simpan URL video
+      }
+    });
 
     await page.goto(videoPageUrl, { waitUntil: 'networkidle', timeout: 60000 }); // Waktu tunggu lebih lama
     await page.waitForTimeout(5000); // Penundaan tambahan
@@ -60,7 +81,7 @@ app.get('/', async (req, res) => {
     }, videoSelector); // Kirim videoSelector ke page.evaluate
 
     console.log("Informasi Debug:", debugInfo); // Cetak informasi debug di server
-    videoSrc = debugInfo.src || debugInfo.sourceSrc || null; // Prioritaskan src langsung, lalu source
+    let videoSrc = debugInfo.src || debugInfo.sourceSrc || networkVideoUrl || null; // Prioritaskan src langsung, lalu source, lalu network
 
     await browser.close();
 
