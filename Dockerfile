@@ -1,4 +1,4 @@
-FROM node:18  # Gunakan image Node.js yang sesuai
+FROM node:20
 
 # Instal dependensi sistem
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -24,10 +24,10 @@ RUN npm install
 # Salin kode aplikasi
 COPY . .
 
-# Atur variabel lingkungan Playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/.cache/ms-playwright
+# Atur variabel lingkungan Playwright (penting untuk Docker)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# Unduh browser Playwright
+# Unduh browser Playwright DAN dependensi sistemnya
 RUN npx playwright install --with-deps
 
 # Perintah untuk menjalankan aplikasi
