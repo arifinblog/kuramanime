@@ -1,5 +1,5 @@
 {
-  "name": "crawle",
+  "name": "kuramp",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,9 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.7.9",
-    "cheerio": "^1.0.0",
     "express": "^4.21.2",
-    "puppeteer": "^24.2.0"
+    "playwright": "^1.50.1",
+    "puppeteer": "^24.2.0",
+    "validator": "^13.12.0"
   }
 }
