@@ -1,4 +1,9 @@
 env:
-  NODE_ENV: production  # Optional for production settings
-buildCommand: npm install
+  NODE_ENV: production
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+  PUPPETEER_DOWNLOAD_HOST: https://storage.googleapis.com
+  CHROMIUM_PATH: /opt/render/project/node_modules/puppeteer-core/.local-chromium/linux-1177981/chrome-linux/chrome #Example path, it may be different depending on your system.
+buildCommand: |
+  npm install
+  npx puppeteer-core install --project-root=/opt/render/project --host=https://storage.googleapis.com
 startCommand: node index.js
