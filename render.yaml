@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: kuramanime
+    env: node
+    buildCommand: |
+      apt-get update -y
+      apt-get upgrade -y
+      apt-get install -y --no-install-recommends wget gnupg2
+      wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+      echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+      apt-get update -y
+      apt-get install -y google-chrome-stable # Install Chrome (more reliable than chromium sometimes)
+      npm install
+      if ! command -v chromium-browser &> /dev/null; then
+        echo "ERROR: Chromium installation failed."
+        exit 1
+      fi
+    startCommand: node index.js
+    instanceType: free # Choose appropriate instance type
+    region: singapore # Choose appropriate region
+    autoDeploy: true

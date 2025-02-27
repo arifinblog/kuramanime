@@ -1,12 +1,25 @@
-const express = require('express');
-const { chromium } = require('playwright');
-const validator = require('validator');
+import express from 'express';
+import { launch } from 'puppeteer-core'; // Ubah import ke puppeteer-core
+import validator from 'validator';
+import fetch from 'node-fetch';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+const chromeOptions = {
+  executablePath: '/opt/google/chrome/google-chrome', // Tambahkan path ke Chromium
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--single-process",
+  ],
+  headless: "new",
+  ignoreHTTPSErrors: true,
+};
+
 app.get('/', async (req, res) => {
-  let videoPageUrl = req.query.getVidUrl;
+  const videoPageUrl = req.query.getVidUrl;
 
   if (!videoPageUrl) {
     return res.status(400).send('Parameter getVidUrl tidak ada.');
@@ -16,117 +29,110 @@ app.get('/', async (req, res) => {
     return res.status(400).send('URL tidak valid.');
   }
 
+  let browser;
   try {
-    const browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
-    });
-    const page = await context.newPage();
+    browser = await launch(chromeOptions);
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
 
-    await page.route('**/*', route => {
-      if (route.request().resourceType() === 'image' || route.request().resourceType() === 'stylesheet' || route.request().resourceType() === 'font')
-        route.abort();
-      else
-        route.continue();
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      if (['image', 'stylesheet', 'font'].includes(request.resourceType())) {
+        request.abort();
+      } else {
+        request.continue();
+      }
     });
 
     console.log("URL yang digunakan:", videoPageUrl);
+    let networkVideoUrl = null;
 
-    let networkVideoUrl = null; // Simpan URL video dari respons jaringan
-
-    // Tangkap respons jaringan
     page.on('response', response => {
       const url = response.url();
       if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.m3u8') || url.endsWith('.ts')) {
         console.log('>> Ditemukan URL video di jaringan:', url);
-        networkVideoUrl = url; // Simpan URL video
+        networkVideoUrl = url;
       }
     });
 
-    await page.goto(videoPageUrl, { waitUntil: 'networkidle', timeout: 60000 }); // Waktu tunggu lebih lama
-    await page.waitForTimeout(5000); // Penundaan tambahan
+    await page.goto(videoPageUrl, { waitUntil: 'networkidle0', timeout: 60000 });
 
-    // Perbaiki selector di sini!
-    const videoSelector = 'div.plyr__video-wrapper > video#player'; // Ganti dengan selector yang benar
+    const videoSelector = 'div.plyr__video-wrapper > video#player';
 
-    // Mencoba mendapatkan URL video dengan berbagai cara dan mengumpulkan info debug
-    const debugInfo = await page.evaluate((videoSelector) => {
-      const videoElement = document.querySelector(videoSelector);
+    const debugInfo = await page.evaluate((selector) => {
+      const videoElement = document.querySelector(selector);
       let src = null;
-      let dataSrc = null;
       let sourceSrc = null;
 
       if (videoElement) {
-        console.log("Elemen video ditemukan:", videoElement);
-        src = videoElement.src || null;  // Ambil atribut src
-
-        // Prioritaskan elemen <source> jika ada
+        src = videoElement.src || null;
         const sourceElement = videoElement.querySelector('source');
-        if (sourceElement) {
-          sourceSrc = sourceElement.src || null;
-          console.log("Elemen source ditemukan:", sourceElement);
-          console.log("Atribut src elemen source:", sourceElement.src);
-        }
+        if (sourceElement) sourceSrc = sourceElement.src || null;
       }
+      return { src, sourceSrc, videoElementFound: !!videoElement };
+    }, videoSelector);
 
-      return {
-        src: src,
-        dataSrc: dataSrc,
-        sourceSrc: sourceSrc,
-        videoElementFound: !!videoElement // true jika videoElement ditemukan
-      };
-    }, videoSelector); // Kirim videoSelector ke page.evaluate
-
-    console.log("Informasi Debug:", debugInfo); // Cetak informasi debug di server
-    let videoSrc = debugInfo.src || debugInfo.sourceSrc || networkVideoUrl || null; // Prioritaskan src langsung, lalu source, lalu network
-
-    await browser.close();
+    console.log("Informasi Debug:", debugInfo);
+    const videoSrc = debugInfo.src || debugInfo.sourceSrc || networkVideoUrl || null;
 
     if (videoSrc) {
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Video Player</title>
-          <style>
-            body {
-              margin: 0;
-              overflow: hidden;
-            }
-            video {
-              position: fixed;
-              top: 0;
-              left: 0;
-              min-width: 100%;
-              min-height: 100%;
-              width: auto;
-              height: auto;
-              z-index: -1;
-            }
-          </style>
-        </head>
-        <body>
-          <video width="100%" height="100%" controls crossorigin="anonymous">
-            <source src="${videoSrc}" type="video/mp4">
-            Browser Anda tidak mendukung tag video.
-          </video>
-        </body>
-        </html>
-      `;
-      res.status(200).send(html);
-    } else {
-      res.status(404).send('Video tidak ditemukan: Tidak dapat menemukan sumber video.');
-    }
+        const html = `<!DOCTYPE html>
+          <html>
+          <head>
+            <title>Video Player</title>
+            <style>
+              body {
+                margin: 0;
+                overflow: hidden;
+                background-color: #000;
+              }
+              video {
+                position: fixed;
+                top: 0;
+                left: 0;
+                min-width: 100%;
+                min-height: 100%;
+                width: auto;
+                height: auto;
+                z-index: 1;
+              }
+            </style>
+          </head>
+          <body>
+            <video controls autoplay>
+              <source src="${videoSrc}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </body>
+          </html>`;
 
+        res.status(200).send(html);
+    } else {
+      res.status(404).send('Video tidak ditemukan.');
+    }
   } catch (error) {
     console.error('Terjadi kesalahan:', error);
     res.status(500).send('Terjadi kesalahan saat memproses permintaan.');
+  } finally {
+    if (browser) await browser.close();
   }
 });
 
-app.listen(port, () => {
+// Start the server and handle graceful shutdown
+const server = app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
+});
+
+process.on('SIGINT', () => {
+  server.close(() => {
+    console.log('Server closed gracefully.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  server.close(() => {
+    console.log('Server closed gracefully.');
+    process.exit(0);
+  });
 });
